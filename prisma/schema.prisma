@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// ----------------------
+// Enums
+// ----------------------
+
+enum UserRole {
+  STUDENT
+  SUPERVISOR
+  ADMIN
+}
+
+enum ProjectStatus {
+  PENDING_REVIEW
+  REJECTED
+  APPROVED_FOR_FINAL
+  PUBLISHED
+}
+
+// ----------------------
+// User & Auth Models
+// ----------------------
+
+model User {
+  id            String       @id @default(cuid())
+  name          String?
+  email         String?      @unique
+  password      String?
+  role          UserRole     @default(STUDENT)
+  image         String?
+
+  // Relationships
+  accounts      Account[]
+  sessions      Session[]
+  projects      Project[]                          // Projects uploaded by this student
+  supervisedProjects Project[] @relation("SupervisorProjects") // Projects supervised by this supervisor
+  comments      Comment[]
+  notifications Notification[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Used for NextAuth email verification
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ----------------------
+// Class List Model
+// ----------------------
+
+model Classlist {
+  id            String  @id @default(cuid())
+  studentName   String
+  studentEmail  String  @unique
+  matricule     String? @unique
+}
+
+// ----------------------
+// Project Related Models
+// ----------------------
+
+model Project {
+  id              String        @id @default(cuid())
+  title           String
+  abstract        String?       @db.Text
+  status          ProjectStatus @default(PENDING_REVIEW)
+  finalPdfUrl     String? // Consider renaming to projectPdfUrl for clarity
+  viewCount       Int           @default(0)
+  downloadCount   Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  publishedAt     DateTime?
+
+  // Relationships
+  studentId       String
+  student         User          @relation(fields: [studentId], references: [id])
+  supervisorId    String?
+  supervisor      User?         @relation("SupervisorProjects", fields: [supervisorId], references: [id])
+  comments        Comment[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  // Relationships
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+}
+
+// ----------------------
+// Notification Model
+// ----------------------
+
+model Notification {
+  id          String    @id @default(cuid())
+  message     String
+  link        String?
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  // Relationship
+  recipientId String
+  recipient   User      @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId])
+}
