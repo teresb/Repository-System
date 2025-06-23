@@ -37,6 +37,14 @@ export default async function handler(req, res) {
       }),
     ]);
 
+    await prisma.notification.create({
+      data: {
+        recipientId: updatedProject.student.id,
+        message: `Your draft for "${updatedProject.title}" was REJECTED. View feedback to resubmit.`,
+        link: `/projects/${updatedProject.id}/resubmit`,
+      },
+    });
+
     // Notify student
     await sendProjectStatusUpdateEmail(
       updatedProject.student.email,

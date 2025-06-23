@@ -34,6 +34,14 @@ export default async function handler(req, res) {
       });
     }
 
+    await prisma.notification.create({
+      data: {
+        recipientId: project.student.id,
+        message: `Your draft for "${project.title}" has been APPROVED. You can now upload the final version.`,
+        link: `/dashboard`,
+      },
+    });
+
     // Notify student
     await sendProjectStatusUpdateEmail(
       project.student.email,

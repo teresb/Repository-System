@@ -39,9 +39,7 @@ export default async function handler(req, res) {
         .json({ message: "All fields and a PDF file are required." });
     }
     if (projectFile.mimetype !== "application/pdf") {
-      return res
-        .status(400)
-        .json({ message: "Only PDF files are accepted." });
+      return res.status(400).json({ message: "Only PDF files are accepted." });
     }
     try {
       const uploadResult = await cloudinary.uploader.upload(
@@ -62,6 +60,14 @@ export default async function handler(req, res) {
         },
       });
 
+      await prisma.notification.create({
+        data: {
+          recipientId: project.supervisor.id,
+          message: `Student ${project.student.name} has submitted a draft for the project "${project.title}".`,
+          link: `/projects/${project.id}/review`,
+        },
+      });
+
       // Send email to supervisor
       const supervisor = await prisma.user.findUnique({
         where: { id: supervisorId.toString() },
@@ -75,7 +81,10 @@ export default async function handler(req, res) {
 
       res
         .status(201)
-        .json({ message: "Project created successfully", projectId: project.id });
+        .json({
+          message: "Project created successfully",
+          projectId: project.id,
+        });
     } catch (error) {
       console.error("Project creation error:", error);
       res.status(500).json({ message: "Failed to create project" });
