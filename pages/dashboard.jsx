@@ -1,252 +1,143 @@
-import { getSession, useSession } from "next-auth/react";
-import Head from "next/head";
-import Link from "next/link";
-import prisma from "../lib/prisma";
-import {
-  UserGroupIcon,
-  ClipboardDocumentListIcon,
-  EyeIcon,
-  ArrowDownTrayIcon,
-} from "@heroicons/react/24/outline";
+import { getSession } from 'next-auth/react';
+import Head from 'next/head';
+import prisma from '../lib/prisma';
+import Link from 'next/link';
+import { useState, useMemo, useRef } from 'react';
 
-// Helper function to format the date
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString("en-US", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-};
+const DashboardPage = ({ projects, searchTerm }) => {
+    const [search, setSearch] = useState(searchTerm || '');
+    const [debouncedSearch, setDebouncedSearch] = useState(searchTerm || '');
+    const debounceRef = useRef();
 
-// Helper function to get status color
-const getStatusColor = (status) => {
-  switch (status) {
-    case "DRAFT":
-      return "bg-gray-200 text-gray-800";
-    case "PENDING_REVIEW":
-      return "bg-yellow-200 text-yellow-800";
-    case "REJECTED":
-      return "bg-red-200 text-red-800";
-    case "APPROVED_FOR_FINAL":
-      return "bg-green-200 text-green-800";
-    case "PUBLISHED":
-      return "bg-blue-200 text-blue-800";
-    default:
-      return "bg-gray-200 text-gray-800";
-  }
-};
+    // Debounce search input
+    const handleSearchChange = (e) => {
+        const value = e.target.value;
+        setSearch(value);
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+            setDebouncedSearch(value);
+        }, 300);
+    };
 
-const DashboardPage = ({ projects }) => {
-  const { data: session } = useSession();
+    const filteredProjects = useMemo(() => {
+        if (!debouncedSearch) return projects;
+        const lower = debouncedSearch.toLowerCase();
+        return projects.filter(p =>
+            p.title.toLowerCase().includes(lower) ||
+            p.student.name.toLowerCase().includes(lower) ||
+            p.supervisor.name.toLowerCase().includes(lower) ||
+            (p.publishedAt && new Date(p.publishedAt).getFullYear().toString().includes(lower))
+        );
+    }, [debouncedSearch, projects]);
 
-  const renderProjectList = (projList) => (
-    <div className="mt-8 flow-root">
-      {projList.length > 0 ? (
-        <ul role="list" className="divide-y divide-gray-200">
-          {projList.map((project) => (
-            <li
-              key={project.id}
-              className="py-5 hover:bg-gray-50 px-2 -mx-2 rounded-md transition-colors"
-            >
-              <div className="flex items-center space-x-4">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {project.title}
-                  </p>
-                  <p className="text-sm text-gray-500 truncate">
-                    {session.user.role === "SUPERVISOR"
-                      ? `Student: ${project.student.name}`
-                      : `Last updated: ${new Date(
-                          project.updatedAt
-                        ).toLocaleDateString()}`}
-                  </p>
-                  {project.status === "PUBLISHED" &&
-                    session.user.role === "STUDENT" && (
-                      <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                        <span className="flex items-center">
-                          <EyeIcon className="h-4 w-4 mr-1" />
-                          {project.viewCount} views
-                        </span>
-                        <span className="flex items-center">
-                          <ArrowDownTrayIcon className="h-4 w-4 mr-1" />
-                          {project.downloadCount} downloads
-                        </span>
-                      </div>
+    return (
+        <>
+            <Head><title>Home & Repository</title></Head>
+            <div className="space-y-6">
+                {/* Full-width header */}
+                <div className="w-full bg-white shadow-sm rounded-lg px-6 py-5 mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-800">
+                            {search ? `Search Results for "${search}"` : 'Project Repository'}
+                        </h1>
+                        <p className="text-gray-600 mt-1">
+                            {search ? `Found ${filteredProjects.length} published projects.` : 'Browse all published projects below or use the search bar.'}
+                        </p>
+                    </div>
+                    <div className="w-full md:w-80">
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={search}
+                                onChange={handleSearchChange}
+                                placeholder="Search by title, student, supervisor, or year..."
+                                className="w-full pl-10 pr-4 py-2 rounded-lg border border-sky-300 bg-white shadow focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-500 transition placeholder-gray-400 text-gray-800"
+                            />
+                            <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-sky-400 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <circle cx="11" cy="11" r="8" />
+                                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Projects Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredProjects.length > 0 ? (
+                        filteredProjects.map(project => (
+                            <Link key={project.id} href={`/repository/${project.id}`} className="group block bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-lg hover:border-sky-300 transition-all">
+                                <h3 className="text-lg font-semibold text-sky-700 group-hover:text-sky-800 truncate">{project.title}</h3>
+                                <p className="text-sm text-gray-600 mt-2">by {project.student.name}</p>
+                                <p className="text-xs text-gray-500 mt-1">Supervisor: {project.supervisor.name}</p>
+                                <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+                                    <span className="text-xs text-gray-400">Published: {new Date(project.publishedAt).getFullYear()}</span>
+                                    <span className="text-xs text-white bg-sky-600 px-2 py-1 rounded-full group-hover:bg-sky-700">View Project</span>
+                                </div>
+                            </Link>
+                        ))
+                    ) : (
+                         <div className="md:col-span-3 text-center py-16 border-2 border-dashed border-gray-300 rounded-lg">
+                             <p className="text-gray-600 font-medium">No Projects Found</p>
+                             <p className="text-gray-500 text-sm mt-1">Try a different search term or check back later.</p>
+                         </div>
                     )}
                 </div>
-                <div className="flex items-center space-x-3">
-                  <span
-                    className={`px-2.5 py-0.5 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(
-                      project.status
-                    )}`}
-                  >
-                    {project.status.replace(/_/g, " ")}
-                  </span>
-                  {session.user.role === "SUPERVISOR" && (
-                    <Link
-                      href={`/projects/${project.id}/review`}
-                      className="text-sm font-medium text-sky-600 hover:text-sky-800"
-                    >
-                      Review
-                    </Link>
-                  )}
-                  {session.user.role === "STUDENT" &&
-                    project.status === "APPROVED_FOR_FINAL" && (
-                      <Link
-                        href={`/projects/${project.id}/upload-final`}
-                        className="text-sm font-medium text-green-600 hover:text-green-800"
-                      >
-                        Upload Final
-                      </Link>
-                    )}
-                  {session.user.role === "STUDENT" &&
-                    project.status === "REJECTED" && (
-                      <Link
-                        href={`/projects/${project.id}/resubmit`}
-                        className="text-sm font-medium text-red-600 hover:text-red-800"
-                      >
-                        Resubmit
-                      </Link>
-                    )}
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div className="text-center py-10 border-2 border-dashed border-gray-300 rounded-lg">
-          <p className="text-gray-500">
-            {session.user.role === "STUDENT"
-              ? "You have not started any projects yet."
-              : "There are no projects currently in your queue."}
-          </p>
-        </div>
-      )}
-    </div>
-  );
-
-  return (
-    <>
-      <Head>
-        <title>Dashboard</title>
-      </Head>
-      <div className="space-y-10">
-        <div className="sm:flex sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold leading-6 text-gray-900">
-              Dashboard
-            </h1>
-            <p className="mt-2 text-sm text-gray-600">
-              Welcome back, {session.user.name}!
-            </p>
-          </div>
-          <div className="mt-3 sm:mt-0 sm:ml-4">
-            <span className="inline-flex items-center px-3 py-0.5 rounded-full text-sm font-medium bg-sky-100 text-sky-800">
-              Role: {session.user.role}
-            </span>
-          </div>
-        </div>
-
-        {/* Student's Project Section */}
-        {session.user.role === "STUDENT" && (
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <div className="sm:flex sm:items-center sm:justify-between">
-              <h2 className="text-xl font-semibold text-gray-800">
-                My Projects
-              </h2>
-              <Link
-                href="/projects/new"
-                className="mt-3 sm:mt-0 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-sky-600 hover:bg-sky-700 transition-colors"
-              >
-                Start New Project
-              </Link>
             </div>
-            {renderProjectList(projects)}
-          </div>
-        )}
-
-        {/* Supervisor and Admin sections will be added here later */}
-        {session.user.role === "SUPERVISOR" && (
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-800">
-              Projects Awaiting Your Review
-            </h2>
-            {renderProjectList(projects)}
-          </div>
-        )}
-        {session.user.role === "ADMIN" && (
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-800">
-              Admin Control Panel
-            </h2>
-            <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <Link
-                href="/admin/users"
-                className="group block p-6 bg-gray-50 rounded-lg border border-gray-200 hover:bg-sky-50 hover:border-sky-300 transition-all"
-              >
-                <UserGroupIcon className="h-8 w-8 text-sky-600 group-hover:scale-110 transition-transform" />
-                <h3 className="mt-2 text-lg font-medium text-gray-900">
-                  Manage Users
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  View users and change their roles.
-                </p>
-              </Link>
-              <Link
-                href="/admin/classlist"
-                className="group block p-6 bg-gray-50 rounded-lg border border-gray-200 hover:bg-sky-50 hover:border-sky-300 transition-all"
-              >
-                <ClipboardDocumentListIcon className="h-8 w-8 text-sky-600 group-hover:scale-110 transition-transform" />
-                <h3 className="mt-2 text-lg font-medium text-gray-900">
-                  Manage Classlist
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Control student registration access.
-                </p>
-              </Link>
-            </div>
-          </div>
-        )}
-      </div>
-    </>
-  );
+        </>
+    );
 };
 
 export async function getServerSideProps(context) {
-  const session = await getSession(context);
+    const session = await getSession(context);
+    if (!session) {
+        return { redirect: { destination: '/auth/login', permanent: false } };
+    }
 
-  if (!session) {
-    return { redirect: { destination: "/auth/login", permanent: false } };
-  }
+    const { q: searchTerm = '' } = context.query;
+    const searchConditions = [];
 
-  let projects = [];
-  if (session.user.role === "STUDENT") {
-    projects = await prisma.project.findMany({
-      where: { studentId: session.user.id },
-      orderBy: { updatedAt: "desc" },
+    if (searchTerm) {
+        // Condition for text search in title, student name, or supervisor name
+        searchConditions.push({
+            OR: [
+                { title: { contains: searchTerm, mode: 'insensitive' } },
+                { student: { name: { contains: searchTerm, mode: 'insensitive' } } },
+                { supervisor: { name: { contains: searchTerm, mode: 'insensitive' } } },
+            ],
+        });
+
+        // Condition for year search
+        const year = parseInt(searchTerm, 10);
+        if (!isNaN(year) && searchTerm.length === 4) {
+            const startDate = new Date(year, 0, 1);
+            const endDate = new Date(year + 1, 0, 1);
+            searchConditions[0].OR.push({
+                publishedAt: {
+                    gte: startDate,
+                    lt: endDate,
+                },
+            });
+        }
+    }
+
+    const projects = await prisma.project.findMany({
+        where: {
+            status: 'PUBLISHED',
+            AND: searchConditions,
+        },
+        include: {
+            student: { select: { name: true } },
+            supervisor: { select: { name: true } },
+        },
+        orderBy: { publishedAt: 'desc' },
     });
-  } else if (session.user.role === "SUPERVISOR") {
-    projects = await prisma.project.findMany({
-      where: {
-        supervisorId: session.user.id,
-        status: "PENDING_REVIEW", // Only show pending projects
-      },
-      include: {
-        student: { select: { name: true } }, // Include student's name
-      },
-      orderBy: { updatedAt: "asc" }, // Show oldest first
-    });
-  }
 
-  // TODO: Fetch projects for supervisor role as well
-
-  return {
-    props: {
-      session,
-      // Safely serialize date objects
-      projects: JSON.parse(JSON.stringify(projects)),
-    },
-  };
+    return {
+        props: {
+            projects: JSON.parse(JSON.stringify(projects)),
+            searchTerm,
+        },
+    };
 }
 
 export default DashboardPage;

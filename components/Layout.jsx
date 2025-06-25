@@ -1,141 +1,154 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useSession, signOut } from "next-auth/react";
 import {
   HomeIcon,
-  UserCircleIcon,
-  ArrowRightStartOnRectangleIcon,
-  ArrowLeftStartOnRectangleIcon,
-  UserPlusIcon,
-  BookOpenIcon,
+  DocumentDuplicateIcon,
   BellIcon,
+  ArrowLeftOnRectangleIcon,
+  PlusIcon,
 } from "@heroicons/react/24/outline";
+
+// --- This is the new Header Component without the Search Bar ---
+const Header = () => {
+  const { data: session } = useSession();
+  return (
+    <header
+      className="bg-sky-700 shadow-sm w-full flex items-center justify-between px-6 h-16 fixed top-0 left-0 z-30"
+      style={{ right: 0 }}
+    >
+      {/* Left Side: Title */}
+      <div>
+        <Link href="/dashboard" className="text-2xl font-bold text-white">
+          ProjectRepo
+        </Link>
+      </div>
+
+      {/* Right Side: User Actions */}
+      <div className="flex items-center space-x-4">
+        {session?.user?.role === 'STUDENT' && (
+          <Link
+            href="/projects/new"
+            className="px-4 py-2 bg-white text-sky-600 text-sm font-semibold rounded-md hover:bg-white transition-colors hidden sm:block"
+          >
+            + Add New Project
+          </Link>
+        )}
+        <div>
+          <div className="font-medium text-white text-right">
+            {session?.user?.name}
+          </div>
+          <div className="text-xs text-gray-300 text-centeru">
+            {session?.user?.role}
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+};
+
+const Sidebar = () => {
+  const router = useRouter();
+  const { data: session } = useSession();
+  const navLinks = [
+    { href: "/dashboard", label: "Home & Search", icon: HomeIcon },
+    { href: "/my-projects", label: "My Projects", icon: DocumentDuplicateIcon },
+    { href: "/notifications", label: "Notifications", icon: BellIcon },
+  ];
+
+  const supervisorLinks = [
+    { href: "/dashboard", label: "Home & Search", icon: HomeIcon },
+    { href: "/review", label: "Review", icon: HomeIcon },
+    {
+      href: "/my-supervised",
+      label: "Supervised",
+      icon: DocumentDuplicateIcon,
+    },
+    { href: "/notifications", label: "Notifications", icon: BellIcon },
+  ];
+
+  const adminLinks = [
+    { href: "/admin/users", label: "Users", icon: HomeIcon },
+    { href: "/admin/classlist", label: "Classlist", icon: DocumentDuplicateIcon },
+    { href: "/admin/projects", label: "Projects", icon: BellIcon },
+    
+  ];
+
+  // Use role-based links
+  let linksToShow = navLinks;
+  if (session?.user?.role === 'SUPERVISOR') {
+    linksToShow = supervisorLinks;
+  } else if (session?.user?.role === 'ADMIN') {
+    linksToShow = adminLinks;
+  }
+
+  return (
+    <div className="w-64 bg-sky-700 text-white flex flex-col  md:flex">
+      {/* Hide sidebar on small screens */}
+      <div className="h-16 flex items-center justify-center text-2xl font-bold border-b border-gray-700">
+        Menu
+      </div>
+      <nav className="flex-1 px-2 py-4 space-y-2">
+        {linksToShow.map((link) => (
+          <Link
+            key={link.label}
+            href={link.href}
+            className={`flex items-center px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
+              router.pathname === link.href || (link.href.startsWith('/dashboard') && router.pathname === '/dashboard')
+                ? "bg-white text-black"
+                : "text-gray-300 hover:bg-gray-700 hover:text-white"
+            }`}
+          >
+            <link.icon className="h-6 w-6 mr-3" />
+            {link.label}
+          </Link>
+        ))}
+      </nav>
+      <div className="px-2 py-4 border-t border-gray-700">
+        <button
+          onClick={() => signOut({ callbackUrl: "/auth/login" })}
+          className="w-full flex items-center px-4 py-2.5 rounded-md text-sm font-medium text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
+        >
+          <ArrowLeftOnRectangleIcon className="h-6 w-6 mr-3" />
+          Sign Out
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const Layout = ({ children }) => {
   const { data: session, status } = useSession();
-  const router = useRouter();
-  const [unreadCount, setUnreadCount] = useState(0);
 
-  useEffect(() => {
-    if (status === "authenticated") {
-      const fetchUnreadCount = async () => {
-        try {
-          const response = await fetch("/api/notifications/unread-count");
-          if (response.ok) {
-            const data = await response.json();
-            setUnreadCount(data.count);
-          }
-        } catch (error) {
-          console.error("Failed to fetch unread notifications count", error);
-        }
-      };
-      fetchUnreadCount();
-      const interval = setInterval(fetchUnreadCount, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [status]);
+  if (status === "loading") {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Loading...
+      </div>
+    );
+  }
 
-  const navLinks = [
-    { href: "/dashboard", icon: UserCircleIcon, label: "Dashboard" },
-    { href: "/repository", icon: BookOpenIcon, label: "Repository" },
-  ];
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <main className="w-full max-w-md">{children}</main>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50 font-sans">
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-        <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link href="/" className="text-xl font-bold text-sky-600">
-              ProjectRepo
-            </Link>
-            <div className="flex items-center space-x-1">
-              <Link
-                href="/"
-                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  router.pathname === "/"
-                    ? "bg-gray-100 text-sky-600"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                <HomeIcon className="h-5 w-5" />
-                <span className="ml-2 hidden sm:inline">Home</span>
-              </Link>
-
-              {status === "loading" ? (
-                <div className="px-3 py-2 text-sm text-gray-500">
-                  Loading...
-                </div>
-              ) : session ? (
-                <>
-                  {navLinks.map((link) => (
-                    <Link
-                      key={link.label}
-                      href={link.href}
-                      className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                        router.pathname.startsWith(link.href)
-                          ? "bg-gray-100 text-sky-600"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
-                    >
-                      <link.icon className="h-5 w-5" />
-                      <span className="ml-2 hidden sm:inline">
-                        {link.label}
-                      </span>
-                    </Link>
-                  ))}
-                  <Link
-                    href="/notifications"
-                    className="relative flex items-center p-2 rounded-md text-gray-600 hover:bg-gray-100 transition-colors"
-                  >
-                    <BellIcon className="h-6 w-6" />
-                    {unreadCount > 0 && (
-                      <span className="absolute top-1 right-1 block h-4 w-4 rounded-full bg-red-500 text-white text-[10px] items-center justify-center font-bold">
-                        {unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                  <button
-                    onClick={() => signOut({ callbackUrl: "/" })}
-                    className="flex items-center p-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
-                    title="Sign Out"
-                  >
-                    <ArrowRightStartOnRectangleIcon className="h-6 w-6" />
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/auth/login"
-                    className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    href="/auth/register"
-                    className="flex items-center bg-sky-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-sky-700 transition-colors shadow-sm"
-                  >
-                    Register
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </nav>
-      </header>
-
-      <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
-      </main>
-
-      <footer className="bg-white border-t border-gray-200">
-        <div className="container mx-auto py-4 px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
-          <p>
-            &copy; {new Date().getFullYear()} Computer Engineering Department.
-            All Rights Reserved.
-          </p>
-        </div>
-      </footer>
+    <div className="flex h-screen bg-gray-100">
+      <Sidebar />
+      <div
+        className="flex-1 flex flex-col overflow-hidden"
+        style={{ paddingTop: "4rem" }}
+      >
+        <Header />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+          {children}
+        </main>
+      </div>
     </div>
   );
 };

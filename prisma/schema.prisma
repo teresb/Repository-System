@@ -7,43 +7,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-// ----------------------
-// Enums
-// ----------------------
-
-enum UserRole {
-  STUDENT
-  SUPERVISOR
-  ADMIN
-}
-
-enum ProjectStatus {
-  PENDING_REVIEW
-  REJECTED
-  APPROVED_FOR_FINAL
-  PUBLISHED
-}
-
-// ----------------------
-// User & Auth Models
-// ----------------------
-
 model User {
-  id            String       @id @default(cuid())
-  name          String?
-  email         String?      @unique
-  password      String?
-  role          UserRole     @default(STUDENT)
-  image         String?
-
-  // Relationships
-  accounts      Account[]
-  sessions      Session[]
-  projects      Project[]                          // Projects uploaded by this student
-  supervisedProjects Project[] @relation("SupervisorProjects") // Projects supervised by this supervisor
-  comments      Comment[]
-  notifications Notification[]
+  id                 String         @id @default(cuid())
+  name               String?
+  email              String?        @unique
+  password           String?
+  role               UserRole       @default(STUDENT)
+  image              String?
+  accounts           Account[]
+  comments           Comment[]
+  notifications      Notification[]
+  projects           Project[]
+  supervisedProjects Project[]      @relation("SupervisorProjects")
+  sessions           Session[]
 }
 
 model Account {
@@ -52,15 +28,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -70,11 +45,9 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// Used for NextAuth email verification
 model VerificationToken {
   identifier String
   token      String   @unique
@@ -83,68 +56,69 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-// ----------------------
-// Class List Model
-// ----------------------
-
 model Classlist {
-  id            String  @id @default(cuid())
-  studentName   String
-  studentEmail  String  @unique
-  matricule     String? @unique
+  id           String  @id @default(cuid())
+  studentName  String
+  studentEmail String  @unique
+  matricule    String? @unique
 }
 
-// ----------------------
-// Project Related Models
-// ----------------------
-
 model Project {
-  id              String        @id @default(cuid())
-  title           String
-  abstract        String?       @db.Text
-  status          ProjectStatus @default(PENDING_REVIEW)
-  finalPdfUrl     String? // Consider renaming to projectPdfUrl for clarity
-  viewCount       Int           @default(0)
-  downloadCount   Int           @default(0)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  publishedAt     DateTime?
-
-  // Relationships
-  studentId       String
-  student         User          @relation(fields: [studentId], references: [id])
-  supervisorId    String?
-  supervisor      User?         @relation("SupervisorProjects", fields: [supervisorId], references: [id])
-  comments        Comment[]
+  id            String        @id @default(cuid())
+  title         String
+  abstract      String?
+  status        ProjectStatus @default(PENDING_REVIEW)
+  draftPdfUrl   String?
+  finalPdfUrl   String?
+  viewCount     Int           @default(0)
+  downloadCount Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  publishedAt   DateTime?
+  studentId     String
+  supervisorId  String?
+  reportType    ReportType    @default(FINAL)
+  comments      Comment[]
+  student       User          @relation(fields: [studentId], references: [id])
+  supervisor    User?         @relation("SupervisorProjects", fields: [supervisorId], references: [id])
 }
 
 model Comment {
   id        String   @id @default(cuid())
-  content   String   @db.Text
+  content   String
   createdAt DateTime @default(now())
-
-  // Relationships
   projectId String
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
   authorId  String
   author    User     @relation(fields: [authorId], references: [id])
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
-// ----------------------
-// Notification Model
-// ----------------------
-
 model Notification {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   message     String
   link        String?
-  isRead      Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-
-  // Relationship
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
   recipientId String
-  recipient   User      @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  recipient   User     @relation(fields: [recipientId], references: [id], onDelete: Cascade)
 
   @@index([recipientId])
+}
+
+enum UserRole {
+  STUDENT
+  SUPERVISOR
+  ADMIN
+}
+
+enum ReportType {
+  INTERNSHIP
+  FINAL
+}
+
+enum ProjectStatus {
+  PENDING_REVIEW
+  REJECTED
+  APPROVED_FOR_FINAL
+  PUBLISHED
 }

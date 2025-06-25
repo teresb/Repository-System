@@ -162,7 +162,7 @@ export async function getServerSideProps(context) {
   const { projectId } = context.params;
 
   if (!session || session.user.role !== "SUPERVISOR") {
-    return { redirect: { destination: "/dashboard", permanent: false } };
+    return { redirect: { destination: "/review", permanent: false } };
   }
 
   const project = await prisma.project.findFirst({

@@ -36,8 +36,9 @@ const AdminClasslistPage = ({ initialClasslist }) => {
         const result = await response.json();
         throw new Error(result.message || "Failed to add student.");
       }
+      const newStudent = await response.json();
+      setClasslist((prev) => [...prev, newStudent]);
       reset();
-      router.replace(router.asPath); // Refresh data
     } catch (error) {
       alert(`Error: ${error.message}`);
     }
@@ -51,8 +52,11 @@ const AdminClasslistPage = ({ initialClasslist }) => {
     )
       return;
     try {
-      await fetch(`/api/admin/classlist/${entryId}`, { method: "DELETE" });
-      router.replace(router.asPath); // Refresh data
+      const response = await fetch(`/api/admin/classlist/${entryId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete student.");
+      setClasslist((prev) => prev.filter((entry) => entry.id !== entryId));
     } catch (error) {
       alert(`Error: ${error.message}`);
     }
