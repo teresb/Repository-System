@@ -2,11 +2,16 @@ import { getSession } from 'next-auth/react';
 import Head from 'next/head';
 import prisma from '../lib/prisma';
 import Link from 'next/link';
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { FunnelIcon } from '@heroicons/react/24/outline';
 
 const DashboardPage = ({ projects, searchTerm }) => {
     const [search, setSearch] = useState(searchTerm || '');
     const [debouncedSearch, setDebouncedSearch] = useState(searchTerm || '');
+    const [showFilters, setShowFilters] = useState(false);
+    const [filterYear, setFilterYear] = useState('');
+    const [filterReportType, setFilterReportType] = useState('');
+    const [filterSupervisor, setFilterSupervisor] = useState('');
     const debounceRef = useRef();
 
     // Debounce search input
@@ -19,45 +24,125 @@ const DashboardPage = ({ projects, searchTerm }) => {
         }, 300);
     };
 
+    // Filtered projects with filters
     const filteredProjects = useMemo(() => {
-        if (!debouncedSearch) return projects;
+        let filtered = projects;
         const lower = debouncedSearch.toLowerCase();
-        return projects.filter(p =>
-            p.title.toLowerCase().includes(lower) ||
-            p.student.name.toLowerCase().includes(lower) ||
-            p.supervisor.name.toLowerCase().includes(lower) ||
-            (p.publishedAt && new Date(p.publishedAt).getFullYear().toString().includes(lower))
-        );
-    }, [debouncedSearch, projects]);
+        if (debouncedSearch) {
+            filtered = filtered.filter(p =>
+                p.title.toLowerCase().includes(lower) ||
+                p.student.name.toLowerCase().includes(lower) ||
+                p.supervisor.name.toLowerCase().includes(lower) ||
+                (p.publishedAt && new Date(p.publishedAt).getFullYear().toString().includes(lower))
+            );
+        }
+        if (filterYear) {
+            filtered = filtered.filter(p => p.publishedAt && new Date(p.publishedAt).getFullYear().toString() === filterYear);
+        }
+        if (filterReportType) {
+            filtered = filtered.filter(p => p.reportType === filterReportType);
+        }
+        if (filterSupervisor) {
+            filtered = filtered.filter(p => p.supervisor.name.toLowerCase().includes(filterSupervisor.toLowerCase()));
+        }
+        return filtered;
+    }, [debouncedSearch, projects, filterYear, filterReportType, filterSupervisor]);
+
+    // Unique years and report types for filter dropdowns
+    const years = useMemo(() => Array.from(new Set(projects.map(p => p.publishedAt && new Date(p.publishedAt).getFullYear()).filter(Boolean))).sort((a, b) => b - a), [projects]);
+    const reportTypes = useMemo(() => Array.from(new Set(projects.map(p => p.reportType).filter(Boolean))), [projects]);
+    const supervisors = useMemo(() => Array.from(new Set(projects.map(p => p.supervisor.name).filter(Boolean))), [projects]);
 
     return (
         <>
             <Head><title>Home & Repository</title></Head>
             <div className="space-y-6">
                 {/* Full-width header */}
-                <div className="w-full bg-white shadow-sm rounded-lg px-6 py-5 mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-800">
-                            {search ? `Search Results for "${search}"` : 'Project Repository'}
+                <div className="w-full h-80 bg-white shadow-sm rounded-lg px-6 py-5 mb-4 flex flex-col items-center justify-center gap-4">
+                    <div className="flex flex-col items-center justify-center h-full w-full gap-5">
+                        <h1 className="text-4xl w-180 font-bold text-gray-800 text-center">
+                            {search ? `Search Results for "${search}"` : 'Explore a World of Knowledge – Search Projects Across All Specialties'}
                         </h1>
-                        <p className="text-gray-600 mt-1">
-                            {search ? `Found ${filteredProjects.length} published projects.` : 'Browse all published projects below or use the search bar.'}
+                        <p className="text-gray-600 mt-1 text-center">
+                            {search ? `Found ${filteredProjects.length} published projects.` : "Use keywords, project titles, student name, or specialty to quickly find the academic work you're looking for in the repository"}
                         </p>
                     </div>
-                    <div className="w-full md:w-80">
-                        <div className="relative">
-                            <input
-                                type="text"
-                                value={search}
-                                onChange={handleSearchChange}
-                                placeholder="Search by title, student, supervisor, or year..."
-                                className="w-full pl-10 pr-4 py-2 rounded-lg border border-sky-300 bg-white shadow focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-500 transition placeholder-gray-400 text-gray-800"
-                            />
-                            <svg className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-sky-400 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                <circle cx="11" cy="11" r="8" />
-                                <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                            </svg>
-                        </div>
+                </div>
+                <div className="flex flex-col items-center -mt-12 md:flex-row md:justify-center md:items-center ">
+                    <div className="relative w-full md:w-[60rem]">
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={handleSearchChange}
+                            placeholder="Search by title, student, supervisor, or year..."
+                            className="w-full pl-12 pr-4 py-4 text-lg rounded-lg border border-sky-300 bg-white shadow focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-500 transition placeholder-gray-400 text-gray-800"
+                        />
+                        <svg className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-sky-400 pointer-events-none" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                    </div>
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowFilters(v => !v)}
+                            className="flex items-center px-4 py-3 rounded-lg border border-sky-300 bg-white shadow hover:bg-sky-50 text-sky-700 font-semibold text-lg focus:outline-none"
+                        >
+                            <FunnelIcon className="h-6 w-6 mr-2" />
+                            Filters
+                        </button>
+                        {showFilters && (
+                            <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg z-50 border border-gray-200 p-4 space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                                    <select
+                                        value={filterYear}
+                                        onChange={e => setFilterYear(e.target.value)}
+                                        className="w-full border border-gray-300 rounded-md p-2"
+                                    >
+                                        <option value="">All</option>
+                                        {years.map(y => (
+                                            <option key={y} value={y}>{y}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Report Type</label>
+                                    <select
+                                        value={filterReportType}
+                                        onChange={e => setFilterReportType(e.target.value)}
+                                        className="w-full border border-gray-300 rounded-md p-2"
+                                    >
+                                        <option value="">All</option>
+                                        {reportTypes.map(rt => (
+                                            <option key={rt} value={rt}>{rt}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Supervisor</label>
+                                    <select
+                                        value={filterSupervisor}
+                                        onChange={e => setFilterSupervisor(e.target.value)}
+                                        className="w-full border border-gray-300 rounded-md p-2"
+                                    >
+                                        <option value="">All</option>
+                                        {supervisors.map(sv => (
+                                            <option key={sv} value={sv}>{sv}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setFilterYear('');
+                                        setFilterReportType('');
+                                        setFilterSupervisor('');
+                                    }}
+                                    className="w-full mt-2 py-2 rounded bg-sky-100 text-sky-700 font-semibold hover:bg-sky-200"
+                                >
+                                    Clear Filters
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -65,13 +150,17 @@ const DashboardPage = ({ projects, searchTerm }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredProjects.length > 0 ? (
                         filteredProjects.map(project => (
-                            <Link key={project.id} href={`/repository/${project.id}`} className="group block bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-lg hover:border-sky-300 transition-all">
-                                <h3 className="text-lg font-semibold text-sky-700 group-hover:text-sky-800 truncate">{project.title}</h3>
-                                <p className="text-sm text-gray-600 mt-2">by {project.student.name}</p>
-                                <p className="text-xs text-gray-500 mt-1">Supervisor: {project.supervisor.name}</p>
-                                <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
-                                    <span className="text-xs text-gray-400">Published: {new Date(project.publishedAt).getFullYear()}</span>
-                                    <span className="text-xs text-white bg-sky-600 px-2 py-1 rounded-full group-hover:bg-sky-700">View Project</span>
+                            <Link key={project.id} href={`/repository/${project.id}`} className="group block bg-white p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-lg hover:border-sky-300 transition-all h-full">
+                                <h3 className="text-2xl font-semibold text-sky-700 group-hover:text-sky-800 truncate mb-2">{project.title}</h3>
+                                {/* Abstract (if exists) */}
+                                {project.abstract && (
+                                    <p className="text-xl text-gray-600 mb-4 line-clamp-3">{project.abstract}</p>
+                                )}
+                                <div className="flex items-end justify-between pt-4 border-t border-gray-100">
+                                    <div className="flex flex-col items-start">
+                                        <span className="text-xs text-gray-500">{project.reportType}</span>
+                                    </div>
+                                    <span className="text-xs text-gray-400">Uploaded: {new Date(project.publishedAt).toLocaleDateString()}</span>
                                 </div>
                             </Link>
                         ))

@@ -60,11 +60,20 @@ export default async function handler(req, res) {
         },
       });
 
+      // Fetch project with relations for notification
+      const projectWithRelations = await prisma.project.findUnique({
+        where: { id: project.id },
+        include: {
+          supervisor: { select: { id: true } },
+          student: { select: { name: true } },
+        },
+      });
+
       await prisma.notification.create({
         data: {
-          recipientId: project.supervisor.id,
-          message: `Student ${project.student.name} has submitted a draft for the project "${project.title}".`,
-          link: `/projects/${project.id}/review`,
+          recipientId: projectWithRelations.supervisor.id,
+          message: `Student ${projectWithRelations.student.name} has submitted a draft for the project "${projectWithRelations.title}".`,
+          link: `/projects/${projectWithRelations.id}/review`,
         },
       });
 

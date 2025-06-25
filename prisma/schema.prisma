@@ -68,7 +68,6 @@ model Project {
   title         String
   abstract      String?
   status        ProjectStatus @default(PENDING_REVIEW)
-  draftPdfUrl   String?
   finalPdfUrl   String?
   viewCount     Int           @default(0)
   downloadCount Int           @default(0)
