@@ -42,7 +42,7 @@ const ResubmitPage = ({ project, error }) => {
             if (!response.ok) throw new Error(result.message || 'An error occurred');
 
             setServerMessage({ type: 'success', content: 'Corrected draft uploaded! Your supervisor has been notified.' });
-            setTimeout(() => router.push('/dashboard'), 2000);
+            setTimeout(() => router.push('/'), 2000);
 
         } catch (error) {
             setServerMessage({ type: 'error', content: error.message });
@@ -117,7 +117,7 @@ export async function getServerSideProps(context) {
     const { projectId } = context.params;
 
     if (!session || session.user.role !== 'STUDENT') {
-        return { redirect: { destination: '/dashboard', permanent: false } };
+        return { redirect: { destination: '/', permanent: false } };
     }
 
     const project = await prisma.project.findUnique({

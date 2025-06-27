@@ -10,10 +10,9 @@ datasource db {
 model User {
   id                 String         @id @default(cuid())
   name               String?
-  email              String?        @unique
   password           String?
   role               UserRole       @default(STUDENT)
-  image              String?
+  matricule          String?        @unique @db.VarChar
   accounts           Account[]
   comments           Comment[]
   notifications      Notification[]
@@ -104,6 +103,14 @@ model Notification {
   @@index([recipientId])
 }
 
+model PendingRegistration {
+  matricule String   @id @db.VarChar
+  otp       String   @db.VarChar
+  expiresAt DateTime @db.Timestamp(6)
+  name      String   @db.VarChar
+  password  String   @db.VarChar
+}
+
 enum UserRole {
   STUDENT
   SUPERVISOR
@@ -118,6 +125,5 @@ enum ReportType {
 enum ProjectStatus {
   PENDING_REVIEW
   REJECTED
-  APPROVED_FOR_FINAL
-  PUBLISHED
+  APPROVED
 }

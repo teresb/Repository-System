@@ -49,7 +49,7 @@ export default async function handler(req, res) {
         const project = await prisma.project.update({
             where: { id: projectId },
             data: {
-                draftPdfUrl: uploadResult.secure_url,
+                finalPdfUrl: uploadResult.secure_url,
                 status: 'PENDING_REVIEW', // Put it back in the supervisor's queue
             },
             include: {
@@ -64,7 +64,8 @@ export default async function handler(req, res) {
                 project.supervisor.email,
                 project.student.name,
                 project.title,
-                project.id
+                project.id,
+                true // Indicate this is a resubmission
             );
         }
 

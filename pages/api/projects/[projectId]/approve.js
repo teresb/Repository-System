@@ -18,7 +18,8 @@ export default async function handler(req, res) {
     const project = await prisma.project.update({
       where: { id: projectId },
       data: {
-        status: "APPROVED_FOR_FINAL",
+        status: "APPROVED",
+        publishedAt: new Date(), // Set publishedAt to now
       },
       include: { student: true },
     });
@@ -38,7 +39,7 @@ export default async function handler(req, res) {
       data: {
         recipientId: project.student.id,
         message: `Your draft for "${project.title}" has been APPROVED. You can now upload the final version.`,
-        link: `/dashboard`,
+        link: `/`,
       },
     });
 
@@ -47,7 +48,7 @@ export default async function handler(req, res) {
       project.student.email,
       project.student.name,
       project.title,
-      "APPROVED_FOR_FINAL"
+      "APPROVED"
     );
 
     res.status(200).json({ message: "Draft approved successfully!" });

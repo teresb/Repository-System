@@ -39,15 +39,20 @@ const NewProjectPage = ({ supervisors }) => {
     formData.append("abstract", data.abstract);
     formData.append("supervisorId", data.supervisorId);
     formData.append("projectFile", data.projectFile[0]);
+    // Get type from query string
+    const type = router.query.type;
+    if (type) {
+      formData.append("type", type);
+    }
     try {
-      const response = await fetch("/api/projects/create", {
+      const response = await fetch(`/api/projects/create${type ? `?type=${type}` : ""}`, {
         method: "POST",
         body: formData,
         credentials: "include"
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "An error occurred");
-      router.push("/dashboard");
+      router.push("/");
     } catch (error) {
       setServerError(error.message);
     } finally {
@@ -60,44 +65,44 @@ const NewProjectPage = ({ supervisors }) => {
       <Head>
         <title>Start New Project</title>
       </Head>
-      <div className="pt-24 pb-12 flex justify-center">
-        <div className="max-w-2xl w-full bg-white p-6 rounded-lg shadow-md">
-          <div className='flex flex-col bg-sky-600 py-8 -mx-6 -mt-6 mb-8 rounded-t-lg shadow-xl justify-center items-center'>
-            <img src="/images/ublogo.png" alt="Logo" className="w-24 h-24" />
-            <h1 className='py-3 text-2xl text-white font-bold'>Department of Computer Engineering</h1>
-            <p className='text-xs px-6 text-center text-white'>Fill in the details below to submit your project for supervisor review. All fields are required.</p>
-          </div>
+      <div className="flex items-center justify-center ">
+        <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl p-8 sm:p-12 border border-sky-100">
           
+
           {serverError && (
-            <p className="text-red-500 bg-red-100 p-3 rounded-md text-sm mb-4">{serverError}</p>
+            <p className="text-red-600 bg-red-50 border border-red-200 p-3 rounded-lg text-sm mb-4 text-center">{serverError}</p>
           )}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-2">
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700">Project Title</label>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <div>
+              <p className="block text-2xl text-center font-semibold text-sky-800 mb-1">Enter your project details</p>
+              <label htmlFor="title" className="block text-sm font-semibold text-sky-800 mb-1">Project Title</label>
               <input
                 id="title"
                 type="text"
                 {...register("title")}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-sky-500 focus:border-sky-500"
+                className="mt-1 block w-full px-4 py-2 border border-sky-200 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-gray-900 bg-sky-50 placeholder-sky-300 transition"
+                placeholder="Enter your project title"
+                autoComplete="off"
               />
               {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title.message}</p>}
             </div>
-            <div className="space-y-2">
-              <label htmlFor="abstract" className="block text-sm font-medium text-gray-700">Abstract</label>
+            <div>
+              <label htmlFor="abstract" className="block text-sm font-semibold text-sky-800 mb-1">Abstract</label>
               <textarea
                 id="abstract"
                 rows={4}
                 {...register("abstract")}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-sky-500 focus:border-sky-500"
+                className="mt-1 block w-full px-4 py-2 border border-sky-200 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-gray-900 bg-sky-50 placeholder-sky-300 transition"
+                placeholder="Briefly describe your project"
               />
               {errors.abstract && <p className="text-red-500 text-xs mt-1">{errors.abstract.message}</p>}
             </div>
-            <div className="space-y-2">
-              <label htmlFor="supervisorId" className="block text-sm font-medium text-gray-700">Select Supervisor</label>
+            <div>
+              <label htmlFor="supervisorId" className="block text-sm font-semibold text-sky-800 mb-1">Select Supervisor</label>
               <select
                 id="supervisorId"
                 {...register("supervisorId")}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md focus:ring-sky-500 focus:border-sky-500"
+                className="mt-1 block w-full px-4 py-2 border border-sky-200 bg-sky-50 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 text-gray-900 transition"
               >
                 <option value="" disabled>-- Select a supervisor --</option>
                 {supervisors.map((supervisor) => (
@@ -106,21 +111,21 @@ const NewProjectPage = ({ supervisors }) => {
               </select>
               {errors.supervisorId && <p className="text-red-500 text-xs mt-1">{errors.supervisorId.message}</p>}
             </div>
-            <div className="space-y-2">
-              <label htmlFor="projectFile" className="block text-sm font-medium text-gray-700 mb-1">Project PDF File (.pdf only)</label>
+            <div>
+              <label htmlFor="projectFile" className="block text-sm font-semibold text-sky-800 mb-1">Project PDF File (.pdf only)</label>
               <input
                 id="projectFile"
                 type="file"
                 {...register("projectFile")}
                 accept=".pdf,application/pdf"
-                className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"
+                className="mt-1 block w-full text-sm text-sky-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"
               />
               {errors.projectFile && <p className="text-red-500 text-xs mt-1">{errors.projectFile.message}</p>}
             </div>
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-2 px-4 border rounded-md text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 disabled:bg-gray-400 mt-4"
+              className="w-full flex justify-center py-2 px-4 rounded-lg text-base font-bold text-white bg-gradient-to-r from-sky-700 to-sky-600 shadow hover:from-sky-800 hover:to-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:bg-sky-300 transition mt-2"
             >
               {isLoading ? "Submitting..." : "Create Project and Submit for Review"}
             </button>
@@ -135,7 +140,7 @@ export async function getServerSideProps(context) {
   const session = await getSession(context);
 
   if (!session || session.user.role !== "STUDENT") {
-    return { redirect: { destination: "/dashboard", permanent: false } };
+    return { redirect: { destination: "/", permanent: false } };
   }
 
   // Fetch the list of supervisors to populate the dropdown

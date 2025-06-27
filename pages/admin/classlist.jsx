@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/router";
+import AdminLayout from "../../components/AdminLayout";
 
 const classlistSchema = z.object({
   studentName: z.string().min(2, "Name is required"),
@@ -63,25 +64,36 @@ const AdminClasslistPage = ({ initialClasslist }) => {
   };
 
   return (
-    <>
+    <AdminLayout>
       <Head>
         <title>Admin: Manage Classlist</title>
       </Head>
-      <div className="space-y-8">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">
-            Add Student to Classlist
+      <div className="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl p-8 sm:p-12 border border-sky-100 space-y-8">
+        <div className="flex flex-col items-center justify-center bg-sky-100 py-8 -mx-12 -mt-12 mb-10 rounded-t-2xl shadow-xl">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-sky-700 mb-1 tracking-tight">
+            Admin: Manage Classlist
           </h1>
+          <p className="text-xs sm:text-sm px-6 text-center text-sky-700 font-medium">
+            Add or remove students from the classlist. Email and matricule are
+            required for each student.
+          </p>
+        </div>
+        <div className="bg-sky-50 p-4 rounded-lg border border-sky-100 shadow-md">
           <form
             onSubmit={handleSubmit(onAddStudent)}
-            className="grid grid-cols-1 gap-6 sm:grid-cols-3"
+            className="flex flex-col sm:flex-row sm:items-end gap-3"
           >
-            <div>
-              <label htmlFor="studentName">Student Name</label>
+            <div className="flex-1 min-w-0">
+              <label
+                htmlFor="studentName"
+                className="block text-sky-700 font-semibold mb-1"
+              >
+                Student Name
+              </label>
               <input
                 id="studentName"
                 {...register("studentName")}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                className="mt-1 block w-full border border-sky-200 rounded-lg shadow-sm p-2 bg-white focus:ring-2 focus:ring-sky-400 focus:border-sky-500 text-sm"
               />
               {errors.studentName && (
                 <p className="text-red-500 text-xs mt-1">
@@ -89,12 +101,17 @@ const AdminClasslistPage = ({ initialClasslist }) => {
                 </p>
               )}
             </div>
-            <div>
-              <label htmlFor="studentEmail">Student Email</label>
+            <div className="flex-1 min-w-0">
+              <label
+                htmlFor="studentEmail"
+                className="block text-sky-700 font-semibold mb-1"
+              >
+                Student Email
+              </label>
               <input
                 id="studentEmail"
                 {...register("studentEmail")}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                className="mt-1 block w-full border border-sky-200 rounded-lg shadow-sm p-2 bg-white focus:ring-2 focus:ring-sky-400 focus:border-sky-500 text-sm"
               />
               {errors.studentEmail && (
                 <p className="text-red-500 text-xs mt-1">
@@ -102,18 +119,23 @@ const AdminClasslistPage = ({ initialClasslist }) => {
                 </p>
               )}
             </div>
-            <div>
-              <label htmlFor="matricule">Matricule (Optional)</label>
+            <div className="flex-1 min-w-0">
+              <label
+                htmlFor="matricule"
+                className="block text-sky-700 font-semibold mb-1"
+              >
+                Matricule
+              </label>
               <input
                 id="matricule"
                 {...register("matricule")}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                className="mt-1 block w-full border border-sky-200 rounded-lg shadow-sm p-2 bg-white focus:ring-2 focus:ring-sky-400 focus:border-sky-500 text-sm"
               />
             </div>
-            <div className="sm:col-span-3">
+            <div className="flex-shrink-0 sm:ml-2 mt-2 sm:mt-0">
               <button
                 type="submit"
-                className="w-full sm:w-auto inline-flex justify-center py-2 px-4 border shadow-sm text-sm font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700"
+                className="inline-flex justify-center py-2 px-4 border shadow-sm text-sm font-medium rounded-md text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-400"
               >
                 Add Student
               </button>
@@ -121,64 +143,58 @@ const AdminClasslistPage = ({ initialClasslist }) => {
           </form>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-bold text-gray-800 mb-6">
-            Current Classlist
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              {/* Table head and body */}
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Name
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Email
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Matricule
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Action
-                  </th>
+        <div className="overflow-x-auto rounded-lg border border-sky-100">
+          <table className="min-w-full divide-y divide-sky-100">
+            <thead className="bg-sky-100">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-bold text-sky-700 uppercase">
+                  Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-sky-700 uppercase">
+                  Email
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-sky-700 uppercase">
+                  Matricule
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-sky-700 uppercase">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-sky-100">
+              {classlist.map((entry) => (
+                <tr key={entry.id}>
+                  <td className="px-6 py-4 text-sm text-sky-900">
+                    {entry.studentName}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-sky-700">
+                    {entry.studentEmail}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-sky-700">
+                    {entry.matricule || "N/A"}
+                  </td>
+                  <td className="px-6 py-4 text-sm font-medium">
+                    <button
+                      onClick={() => onDeleteStudent(entry.id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      Delete
+                    </button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {classlist.map((entry) => (
-                  <tr key={entry.id}>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {entry.studentName}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {entry.studentEmail}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {entry.matricule || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium">
-                      <button
-                        onClick={() => onDeleteStudent(entry.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
-    </>
+    </AdminLayout>
   );
 };
 
 export async function getServerSideProps(context) {
   const session = await getSession(context);
   if (!session || session.user.role !== "ADMIN") {
-    return { redirect: { destination: "/dashboard", permanent: false } };
+    return { redirect: { destination: "/", permanent: false } };
   }
 
   const classlist = await prisma.classlist.findMany({

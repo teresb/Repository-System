@@ -25,8 +25,16 @@ export default async function handler(req, res) {
         } catch (error) {
              return res.status(500).json({ message: 'Failed to update user role.' });
         }
+    } else if (req.method === 'DELETE') {
+        // Delete user
+        try {
+            await prisma.user.delete({ where: { id: userId } });
+            return res.status(204).end();
+        } catch (error) {
+            return res.status(500).json({ message: 'Failed to delete user.' });
+        }
     } else {
-        res.setHeader('Allow', ['PUT']);
+        res.setHeader('Allow', ['PUT', 'DELETE']);
         res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 }

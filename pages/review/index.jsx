@@ -10,29 +10,64 @@ const SupervisorReviewList = ({ projects }) => {
         <title>Projects Needing Review</title>
       </Head>
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold text-sky-800 mb-6">Projects Needing Your Review</h1>
+        <div className="mb-6 flex flex-col md:flex-row md:items-center gap-4">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-sky-100 text-sky-800 rounded-md font-semibold shadow hover:bg-sky-200 transition border border-sky-200"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back
+          </Link>
+          <h1 className="text-3xl font-bold text-sky-800 text-center md:text-left m-0">
+            Projects Needing Your Review
+          </h1>
+        </div>
         {projects.length === 0 ? (
-          <div className="bg-white p-8 rounded-lg shadow text-center text-gray-500">
+          <div className="bg-white p-10 rounded-xl shadow text-center text-gray-400 text-lg border border-sky-100">
             No projects are currently awaiting your review.
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ul className="space-y-4">
             {projects.map((project) => (
-              <div key={project.id} className="bg-white p-6 rounded-lg shadow border border-gray-200 flex flex-col justify-between">
+              <li
+                key={project.id}
+                className="bg-white p-6 rounded-xl shadow border border-sky-100 flex flex-col md:flex-row md:items-center md:justify-between hover:shadow-lg transition-shadow duration-200"
+              >
                 <div>
-                  <h2 className="text-xl font-semibold text-sky-700 mb-2 break-words">{project.title}</h2>
-                  <p className="text-gray-600 mb-1">Student: <span className="font-medium">{project.student.name}</span></p>
-                  <p className="text-gray-500 text-sm mb-2">Submitted: {new Date(project.publishedAt).toLocaleDateString()}</p>
+                  <h2 className="text-lg font-semibold text-sky-800 mb-1 break-words">
+                    {project.title}
+                  </h2>
+                  <p className="text-gray-700 mb-1">
+                    <span className="font-semibold">Student:</span> {project.student.name}
+                  </p>
+                  <p className="text-gray-500 text-sm">
+                    <span className="font-medium">Submitted:</span> {new Date(project.publishedAt).toLocaleDateString()}
+                  </p>
                 </div>
-                <Link
-                  href={`/projects/${project.id}/review`}
-                  className="mt-4 inline-block px-4 py-2 bg-sky-700 text-white rounded-md font-semibold hover:bg-sky-800 transition"
-                >
-                  Review Project
-                </Link>
-              </div>
+                <div className="mt-4 md:mt-0 md:ml-8 flex-shrink-0">
+                  <Link
+                    href={`/projects/${project.id}/review`}
+                    className="inline-block px-5 py-2 bg-sky-700 text-white rounded-lg font-bold hover:bg-sky-800 transition text-center shadow"
+                  >
+                    Review Project
+                  </Link>
+                </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
     </>
@@ -42,7 +77,7 @@ const SupervisorReviewList = ({ projects }) => {
 export async function getServerSideProps(context) {
   const session = await getSession(context);
   if (!session || session.user.role !== "SUPERVISOR") {
-    return { redirect: { destination: "/dashboard", permanent: false } };
+    return { redirect: { destination: "/", permanent: false } };
   }
 
   const projects = await prisma.project.findMany({

@@ -26,29 +26,39 @@ export default async function handler(req, res) {
       .json({ message: "Unauthorized. You must be logged in as a student." });
   }
 
-  const form = formidable({});
+  const form = formidable({ multiples: false });
+
   form.parse(req, async (err, fields, files) => {
     if (err) {
       return res.status(400).json({ message: "Form parsing error" });
     }
+
     const { title, abstract, supervisorId } = fields;
+    const projectType = req.query.type || fields.type; // get type from query or fields
     const projectFile = files.projectFile?.[0] || files.projectFile;
+
     if (!title || !abstract || !supervisorId || !projectFile) {
       return res
         .status(400)
         .json({ message: "All fields and a PDF file are required." });
     }
+
     if (projectFile.mimetype !== "application/pdf") {
       return res.status(400).json({ message: "Only PDF files are accepted." });
     }
+
     try {
+      // Upload PDF file with token-based (private) access
       const uploadResult = await cloudinary.uploader.upload(
         projectFile.filepath,
         {
           folder: "project_files",
-          resource_type: "auto",
+          resource_type: "raw",
+          type: "authenticated", // ✅ token-based secure access
         }
       );
+
+      // Save Cloudinary public_id for generating secure links later
       const project = await prisma.project.create({
         data: {
           title: title.toString(),
@@ -56,11 +66,12 @@ export default async function handler(req, res) {
           status: "PENDING_REVIEW",
           student: { connect: { id: token.id } },
           supervisor: { connect: { id: supervisorId.toString() } },
-          finalPdfUrl: uploadResult.secure_url,
+          finalPdfUrl: uploadResult.public_id, // Save public_id, not the full URL
+          reportType: projectType ? projectType.toString().toUpperCase() : undefined, // Set reportType
         },
       });
 
-      // Fetch project with relations for notification
+      // Notify supervisor
       const projectWithRelations = await prisma.project.findUnique({
         where: { id: project.id },
         include: {
@@ -77,10 +88,11 @@ export default async function handler(req, res) {
         },
       });
 
-      // Send email to supervisor
+      // Email the supervisor
       const supervisor = await prisma.user.findUnique({
         where: { id: supervisorId.toString() },
       });
+
       await sendProjectSubmissionEmail(
         supervisor.email,
         token.name || "A student",
@@ -88,15 +100,13 @@ export default async function handler(req, res) {
         project.id
       );
 
-      res
-        .status(201)
-        .json({
-          message: "Project created successfully",
-          projectId: project.id,
-        });
+      return res.status(201).json({
+        message: "Project created successfully",
+        projectId: project.id,
+      });
     } catch (error) {
       console.error("Project creation error:", error);
-      res.status(500).json({ message: "Failed to create project" });
+      return res.status(500).json({ message: "Failed to create project" });
     }
   });
 }

@@ -2,18 +2,37 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { getSession } from "next-auth/react";
 import prisma from "../../../lib/prisma";
-import { useState } from "react";
-import {
-  CheckIcon,
-  XMarkIcon,
-  ChatBubbleLeftEllipsisIcon,
-} from "@heroicons/react/24/solid";
+import { useState, useEffect } from "react";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/24/solid";
 
-const ProjectReviewPage = ({ project, error }) => {
+const ProjectReviewPage = ({ project, error, cloudinaryName, cloudinaryApiKey }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState({ type: "", content: "" });
   const [comments, setComments] = useState("");
+  const [pdfUrl, setPdfUrl] = useState("");
+
+  useEffect(() => {
+    const generateSignedUrl = async () => {
+      try {
+        const res = await fetch("/api/cloudinary/generate-pdf-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ publicId: project.finalPdfUrl }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setPdfUrl(data.signedUrl);
+        } else {
+          throw new Error(data.message);
+        }
+      } catch (err) {
+        console.error("Error generating signed URL:", err.message);
+      }
+    };
+
+    if (project.finalPdfUrl) generateSignedUrl();
+  }, [project.finalPdfUrl]);
 
   if (error) {
     return (
@@ -22,15 +41,11 @@ const ProjectReviewPage = ({ project, error }) => {
       </div>
     );
   }
-  if (!project) {
-    return <div className="text-center p-8">Project not found.</div>;
-  }
 
   const handleAction = async (action) => {
     let confirmationMessage = "";
     if (action === "approve") {
-      confirmationMessage =
-        "Are you sure you want to approve this draft for final submission?";
+      confirmationMessage = "Approve this draft for final submission?";
     } else if (action === "reject") {
       if (!comments.trim()) {
         setActionMessage({
@@ -39,7 +54,7 @@ const ProjectReviewPage = ({ project, error }) => {
         });
         return;
       }
-      confirmationMessage = "Are you sure you want to reject this draft?";
+      confirmationMessage = "Reject this draft?";
     }
 
     if (!window.confirm(confirmationMessage)) return;
@@ -51,13 +66,13 @@ const ProjectReviewPage = ({ project, error }) => {
       const response = await fetch(`/api/projects/${project.id}/${action}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ comments }), // Send comments for both actions
+        body: JSON.stringify({ comments }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.message);
 
       setActionMessage({ type: "success", content: result.message });
-      setTimeout(() => router.push("/dashboard"), 2000); // Redirect to dashboard on success
+      setTimeout(() => router.push("/review"), 2000);
     } catch (err) {
       setActionMessage({ type: "error", content: err.message });
     } finally {
@@ -74,21 +89,21 @@ const ProjectReviewPage = ({ project, error }) => {
         {/* PDF Viewer */}
         <div className="flex-grow md:w-2/3">
           <div className="bg-gray-200 rounded-lg shadow-lg h-[85vh] w-full">
-            {project.finalPdfUrl ? (
+            {pdfUrl ? (
               <iframe
-                src={project.finalPdfUrl}
+                src={pdfUrl}
                 title={`PDF Preview for ${project.title}`}
                 className="w-full h-full border-0 rounded-lg"
               />
             ) : (
               <div className="flex items-center justify-center h-full text-gray-600">
-                No draft has been uploaded for this project yet.
+                No draft has been uploaded or it can't be previewed.
               </div>
             )}
           </div>
         </div>
 
-        {/* Details & Actions Sidebar */}
+        {/* Sidebar */}
         <div className="md:w-1/3 flex-shrink-0">
           <div className="bg-white p-5 rounded-lg shadow-lg space-y-4 sticky top-4">
             <h1 className="text-xl font-bold text-sky-800 break-words">
@@ -139,7 +154,7 @@ const ProjectReviewPage = ({ project, error }) => {
                   <button
                     onClick={() => handleAction("reject")}
                     disabled={isLoading || !comments.trim()}
-                    className="flex-1 inline-flex items-center justify-center px-4 py-2 border text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    className="flex-1 inline-flex items-center justify-center px-4 py-2 border text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-400"
                   >
                     <XMarkIcon className="h-5 w-5 mr-2" /> Reject Draft
                   </button>
@@ -168,7 +183,7 @@ export async function getServerSideProps(context) {
   const project = await prisma.project.findFirst({
     where: {
       id: projectId,
-      supervisorId: session.user.id, // Ensure supervisor can only access their own projects
+      supervisorId: session.user.id,
     },
     include: {
       student: { select: { name: true, email: true } },
@@ -183,7 +198,11 @@ export async function getServerSideProps(context) {
     };
   }
 
-  return { props: { project: JSON.parse(JSON.stringify(project)) } };
+  return {
+    props: {
+      project: JSON.parse(JSON.stringify(project)),
+    },
+  };
 }
 
 export default ProjectReviewPage;
