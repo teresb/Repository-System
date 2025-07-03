@@ -186,7 +186,7 @@ export async function getServerSideProps(context) {
       supervisorId: session.user.id,
     },
     include: {
-      student: { select: { name: true, email: true } },
+      student: { select: { name: true, matricule: true } },
     },
   });
 
