@@ -119,7 +119,7 @@ const ProjectReviewPage = ({ project, error, cloudinaryName, cloudinaryApiKey })
                     rows="8"
                     value={comments}
                     onChange={(e) => setComments(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500"
+                    className="w-full p-2 border border-gray-300 text-gray-600 rounded-md shadow-sm focus:ring-sky-500 focus:border-sky-500"
                     placeholder="Provide feedback here. Required for rejection."
                   ></textarea>
                 </div>
