@@ -10,29 +10,6 @@ const ProjectReviewPage = ({ project, error, cloudinaryName, cloudinaryApiKey })
   const [isLoading, setIsLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState({ type: "", content: "" });
   const [comments, setComments] = useState("");
-  const [pdfUrl, setPdfUrl] = useState("");
-
-  useEffect(() => {
-    const generateSignedUrl = async () => {
-      try {
-        const res = await fetch("/api/cloudinary/generate-pdf-url", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ publicId: project.finalPdfUrl }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setPdfUrl(data.signedUrl);
-        } else {
-          throw new Error(data.message);
-        }
-      } catch (err) {
-        console.error("Error generating signed URL:", err.message);
-      }
-    };
-
-    if (project.finalPdfUrl) generateSignedUrl();
-  }, [project.finalPdfUrl]);
 
   if (error) {
     return (
@@ -89,17 +66,20 @@ const ProjectReviewPage = ({ project, error, cloudinaryName, cloudinaryApiKey })
         {/* PDF Viewer */}
         <div className="flex-grow md:w-2/3">
           <div className="bg-gray-200 rounded-lg shadow-lg h-[85vh] w-full">
-            {pdfUrl ? (
-              <iframe
-                src={pdfUrl}
-                title={`PDF Preview for ${project.title}`}
-                className="w-full h-full border-0 rounded-lg"
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-600">
-                No draft has been uploaded or it can't be previewed.
-              </div>
-            )}
+            <iframe
+              src="/Guidelines for Final year  Project.pdf"
+              title={`PDF Preview for ${project.title}`}
+              className="w-full h-full border-0 rounded-lg"
+            />
+          </div>
+          <div className="mt-4 flex justify-end">
+            <a
+              href="/Guidelines for Final year  Project.pdf"
+              download
+              className="inline-flex items-center px-6 py-3 border-2 border-sky-700 text-lg font-bold rounded-xl shadow text-white bg-sky-700 hover:bg-sky-800 hover:border-sky-800 transition"
+            >
+              Download PDF
+            </a>
           </div>
         </div>
 
