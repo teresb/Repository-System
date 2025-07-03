@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useState, useMemo, useRef } from 'react';
 import { FunnelIcon } from '@heroicons/react/24/outline';
 
-const HomePage = ({ projects, searchTerm }) => {
+const HomePage = ({ projects, searchTerm, supervisorNames }) => {
     const [search, setSearch] = useState(searchTerm || '');
     const [debouncedSearch, setDebouncedSearch] = useState(searchTerm || '');
     const [showFilters, setShowFilters] = useState(false);
@@ -130,7 +130,7 @@ const HomePage = ({ projects, searchTerm }) => {
                                         className="w-full border border-sky-300 rounded-md p-2 text-sm text-gray-400"
                                     >
                                         <option value="">All</option>
-                                        {supervisors.map(sv => (
+                                        {supervisorNames.map(sv => (
                                             <option key={sv} value={sv}>{sv}</option>
                                         ))}
                                     </select>
@@ -231,10 +231,19 @@ export async function getServerSideProps(context) {
         orderBy: { publishedAt: 'desc' },
     });
 
+    // Fetch all supervisors
+    const allSupervisors = await prisma.user.findMany({
+        where: { role: 'SUPERVISOR' },
+        select: { name: true },
+        orderBy: { name: 'asc' },
+    });
+    const supervisorNames = allSupervisors.map(s => s.name);
+
     return {
         props: {
             projects: JSON.parse(JSON.stringify(projects)),
             searchTerm,
+            supervisorNames,
         },
     };
 }
