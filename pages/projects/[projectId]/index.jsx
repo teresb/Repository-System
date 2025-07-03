@@ -79,17 +79,11 @@ const ProjectDetailPage = ({ project, error }) => {
         {/* PDF Viewer */}
         <div className="mt-10">
           <div className="bg-sky-50 rounded-2xl shadow-lg border-2 border-sky-100 h-[80vh] w-full overflow-hidden">
-            {project.finalPdfUrl ? (
-              <iframe
-                src={project.finalPdfUrl}
-                title={`PDF Viewer for ${project.title}`}
-                className="w-full h-full border-0 rounded-2xl"
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-sky-700 text-xl font-semibold">
-                Final PDF is not available for this project.
-              </div>
-            )}
+            <iframe
+              src="/sample.pdf"
+              title={`PDF Viewer for ${project.title}`}
+              className="w-full h-full border-0 rounded-2xl"
+            />
           </div>
         </div>
       </div>
