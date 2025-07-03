@@ -98,7 +98,7 @@ const LoginPage = () => {
                 id="matricule"
                 type="text"
                 {...register('matricule')}
-                className="mt-1 block w-full px-3 py-2 border border-sky-300 rounded-md focus:ring-sky-500 focus:border-sky-600 text-base"
+                className="mt-1 block w-full text-gray-600 px-3 py-2 border border-sky-300 rounded-md focus:ring-sky-500 focus:border-sky-600 text-base"
               />
               {errors.matricule && (
                 <p className="text-red-600 text-xs mt-1">{errors.matricule.message}</p>
@@ -110,7 +110,7 @@ const LoginPage = () => {
                 id="password"
                 type="password"
                 {...register('password')}
-                className="mt-1 block w-full px-3 py-2 border border-sky-300 rounded-md focus:ring-sky-500 focus:border-sky-600 text-base"
+                className="mt-1 block text-gray-600 w-full px-3 py-2 border border-sky-300 rounded-md focus:ring-sky-500 focus:border-sky-600 text-base"
               />
               {errors.password && (
                 <p className="text-red-600 text-xs mt-1">{errors.password.message}</p>

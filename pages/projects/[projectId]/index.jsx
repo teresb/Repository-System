@@ -18,22 +18,39 @@ const ProjectDetailPage = ({ project, error }) => {
       <Head>
         <title>{project.title}</title>
       </Head>
-      <div className="max-w-5xl mx-auto mt-10">
-        <div className="bg-white p-12 rounded-2xl shadow-2xl space-y-10 border-2 border-sky-200">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-b-2 border-sky-100 pb-6">
-            <div>
+      <div className="max-w-7xl mx-auto mt-10">
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* PDF Viewer */}
+          <div className="flex-grow md:w-2/3">
+            <div className="bg-sky-50 rounded-2xl shadow-lg border-2 border-sky-100 h-[80vh] w-full overflow-hidden">
+              <iframe
+                src="/Guidelines for Final year  Project.pdf"
+                title={`PDF Viewer for ${project.title}`}
+                className="w-full h-full border-0 rounded-2xl"
+              />
+            </div>
+          </div>
+
+          {/* Project Details Sidebar */}
+          <div className="md:w-1/3 flex-shrink-0">
+            <div className="bg-white p-8 rounded-2xl shadow-2xl border-2 border-sky-200 space-y-8 sticky top-8">
               <Link
                 href="/"
                 className="text-lg text-sky-700 hover:underline font-semibold flex items-center gap-2"
               >
                 &larr; Back
               </Link>
-              <h1 className="text-4xl font-extrabold text-sky-800 mt-3 mb-2 drop-shadow">
+              <h1 className="text-xl font-bold text-sky-800 mb-2 drop-shadow">
                 {project.title}
               </h1>
-              <div className="flex flex-wrap gap-x-8 gap-y-2 text-lg text-sky-700 font-medium mt-2">
+              <div>
+                <p className="text-base text-gray-700 whitespace-pre-wrap bg-sky-50 rounded-lg p-4 border border-sky-100">
+                  {project.abstract}
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 text-lg text-sky-700 font-small mt-2">
                 <span>
-                  Author:{" "}
+                  Student:{" "}
                   <span className="text-gray-800 font-semibold">
                     {project.student.name}
                   </span>
@@ -57,33 +74,9 @@ const ProjectDetailPage = ({ project, error }) => {
                   </span>
                 </span>
               </div>
+              
+              
             </div>
-            <a
-              href={`/api/projects/${project.id}/track?action=download`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center px-6 py-3 border-2 border-sky-700 text-lg font-bold rounded-xl shadow text-white bg-sky-700 hover:bg-sky-800 hover:border-sky-800 transition"
-            >
-              <ArrowDownTrayIcon className="-ml-1 mr-2 h-6 w-6" />
-              Download PDF
-            </a>
-          </div>
-          <div className="pt-6">
-            <h2 className="text-2xl font-bold text-sky-800 mb-3">Abstract</h2>
-            <p className="text-lg text-gray-700 whitespace-pre-wrap bg-sky-50 rounded-lg p-6 border border-sky-100">
-              {project.abstract}
-            </p>
-          </div>
-        </div>
-
-        {/* PDF Viewer */}
-        <div className="mt-10">
-          <div className="bg-sky-50 rounded-2xl shadow-lg border-2 border-sky-100 h-[80vh] w-full overflow-hidden">
-            <iframe
-              src="/sample.pdf"
-              title={`PDF Viewer for ${project.title}`}
-              className="w-full h-full border-0 rounded-2xl"
-            />
           </div>
         </div>
       </div>

@@ -17,7 +17,7 @@ const MyProjectsPage = ({ projects }) => {
         return "bg-yellow-200 text-gray-800";
       case "REJECTED":
         return "bg-red-200 text-red-800";
-      case "APPROVED_FOR_FINAL":
+      case "APPROVED":
         return "bg-green-200 text-green-800";
       case "PUBLISHED":
         return "bg-blue-200 text-blue-800";
